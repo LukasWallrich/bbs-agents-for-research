@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reconsidering AI for research</title>
+  <link rel="icon" href="data:,">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css" id="theme">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root {
+      --bg:        #FDFBF7;
+      --surface:   #FFFFFF;
+      --text:      #2D2A24;
+      --text-2:    #5C574D;
+      --accent:    #8B2635;
+      --accent-lt: #F5E6E8;
+      --border:    #E8E4DC;
+      --highlight: #FEF3C7;
+      --serif: "Fraunces", Georgia, "Times New Roman", serif;
+      --sans:  "Inter", -apple-system, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    .reveal { font-family: var(--sans); font-size: 30px; color: var(--text); }
+    .reveal .slides { text-align: left; }
+    .reveal .slides section { background: var(--bg); }
+    /* background of the deck itself */
+    html, body { background: var(--bg); }
+    .reveal-viewport { background: var(--bg); }
+
+    .reveal h1, .reveal h2, .reveal h3 {
+      font-family: var(--serif); color: var(--text);
+      font-weight: 500; text-transform: none; letter-spacing: -0.01em;
+      line-height: 1.1; margin: 0 0 0.5em 0;
+    }
+    .reveal h1 { font-size: 1.9em; }
+    .reveal h2 { font-size: 1.5em; }
+    .reveal h3 { font-size: 1.1em; color: var(--text-2); font-weight: 500; }
+    .reveal p, .reveal li { color: var(--text); line-height: 1.45; }
+    .reveal strong { color: var(--accent); font-weight: 600; }
+    .reveal em { color: var(--text); font-style: italic; }
+    .reveal a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent-lt); }
+
+    /* a small uppercase section marker */
+    .marker {
+      font-family: var(--sans); text-transform: uppercase;
+      letter-spacing: 0.16em; font-size: 0.6em; font-weight: 600;
+      color: var(--accent); margin: 0 0 0.8em 0;
+    }
+
+    .reveal .slides section.pad { padding: 0 4% 0 6%; }
+    .reveal ul { margin-left: 1em; }
+    .reveal li { margin-bottom: 0.45em; }
+    .lead { font-size: 1.15em; color: var(--text-2); }
+    .quiet { color: var(--text-2); }
+    .small { font-size: 0.78em; }
+    .tiny  { font-size: 0.62em; color: var(--text-2); }
+
+    /* two-column */
+    .cols { display: flex; gap: 6%; align-items: flex-start; }
+    .cols > div { flex: 1; }
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 0.8em 1em;
+    }
+    .card.accent { border-color: var(--accent); background: var(--accent-lt); }
+    .label {
+      font-family: var(--sans); text-transform: uppercase; letter-spacing: 0.12em;
+      font-size: 0.6em; font-weight: 600; color: var(--accent); margin-bottom: 0.3em;
+    }
+
+    /* the four-habit model */
+    .habits { display: flex; gap: 3%; margin-top: 0.4em; }
+    .habits > div { flex: 1; border-top: 3px solid var(--accent); padding-top: 0.5em; }
+    .habits h3 { font-family: var(--serif); color: var(--text); font-size: 1.15em; margin-bottom: 0.2em; }
+    .habits p { font-size: 0.74em; color: var(--text-2); line-height: 1.35; }
+
+    /* data-safety spectrum */
+    .spectrum { display: flex; flex-direction: column; gap: 0.5em; margin-top: 0.3em; }
+    .spectrum > div { display: flex; align-items: baseline; gap: 0.7em; padding: 0.45em 0.8em; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); }
+    .spectrum .tag { font-family: var(--sans); font-weight: 600; font-size: 0.72em; min-width: 5.5em; }
+    .spectrum .ok  .tag { color: #2f6f4e; }
+    .spectrum .mid .tag { color: #b8801f; }
+    .spectrum .no  .tag { color: var(--accent); }
+    .spectrum p { font-size: 0.8em; margin: 0; }
+
+    .statline { font-size: 1.05em; }
+    .statline .big { font-family: var(--serif); color: var(--accent); font-weight: 600; }
+
+    /* half-slide split with illustration */
+    .reveal .slides section.split-section { height: 100%; padding: 0; }
+    .split { display: flex; align-items: stretch; width: 100%; height: 100%; min-height: 100vh; }
+    .split-art { flex: 0 0 42%; overflow: hidden; background: var(--bg); }
+    .split-art img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; margin: 0; }
+    .split-art img.fit { object-fit: contain; padding: 5% 6%; }
+    .split-copy { flex: 1; align-self: center; text-align: left; padding: 0 5% 0 5%; }
+    .split-copy h1, .split-copy h2 { margin-bottom: 0.35em; }
+
+    /* footer brand — hidden to avoid overlap with dense content; slide number gives orientation */
+    .brand { display: none; }
+
+    /* references / bibliography */
+    #bibliography { font-size: 0.6em; }
+    #bibliography .ref { margin-bottom: 0.55em; line-height: 1.35; color: var(--text-2); }
+    .reveal .slides section.content { padding: 0 5% 0 6%; }
+
+    .reveal .progress { color: var(--accent); }
+    .reveal .controls { color: var(--accent); }
+
+    /* agent-loop diagram */
+    .flow { display:flex; align-items:center; justify-content:center; gap:1.1em; margin-top:0.5em; }
+    .flow .endcap { font-family:var(--sans); font-size:0.62em; font-weight:600; color:var(--accent);
+      text-transform:uppercase; letter-spacing:0.1em; white-space:nowrap; }
+    .node { background:var(--surface); border:1px solid var(--border); border-radius:10px;
+      padding:0.55em 0.9em; text-align:center; min-width:6.4em; }
+    .node.brain { border-color:var(--accent); background:var(--accent-lt); }
+    .node .nt { font-family:var(--serif); font-size:1.05em; color:var(--text); line-height:1.1; }
+    .node .ns { font-size:0.56em; color:var(--text-2); margin-top:0.2em; line-height:1.25; }
+    .wires { display:flex; flex-direction:column; gap:0.5em; min-width:9.5em; }
+    .wire { font-size:0.6em; color:var(--text-2); white-space:nowrap; line-height:1.2; }
+    .wire .ar { color:var(--accent); font-weight:700; }
+    .wire b { color:var(--accent); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; }
+    .loopnote { text-align:center; font-size:0.66em; color:var(--text-2); margin-top:0.7em; }
+    .loopnote .ar { color:var(--accent); font-weight:700; }
+    .chips { display:flex; flex-wrap:wrap; gap:0.5em; margin-top:0.5em; justify-content:center; }
+    .chip { font-family:var(--sans); font-size:0.64em; font-weight:500; color:var(--text);
+      background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:0.3em 0.85em; }
+    .chip b { color:var(--accent); font-weight:600; }
+
+    /* agent transcript */
+    .turns { display:flex; flex-direction:column; gap:0.45em; margin-top:0.4em; }
+    .turn { display:flex; align-items:baseline; gap:0.8em; }
+    .turn .tool { flex:0 0 8.2em; font-family:var(--sans); font-size:0.62em; font-weight:600;
+      text-transform:uppercase; letter-spacing:0.06em; color:var(--accent); text-align:right; }
+    .turn .res { font-size:0.84em; color:var(--text); line-height:1.35; }
+    .turn.goal .tool { color:var(--text-2); }
+    .turn.done .tool { color:#2f6f4e; }
+    .turn.done .res { color:#2f6f4e; font-weight:500; }
+
+    /* fragment that inserts a word inline (no reserved gap), in accent colour */
+    .reveal .fragment.insert-red { display:none; }
+    .reveal .fragment.insert-red.visible { display:inline; color:var(--accent); font-weight:600; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+  <div class="slides">
+
+    <!-- Title -->
+    <section data-cid="s-09ac9b19" class="split-section">
+      <div class="split">
+        <div class="split-art"><img src="assets/title.png" alt="A human hand and a machine hand over shared research files"></div>
+        <div class="split-copy">
+          <p data-cid="e-d6d1ece7" class="marker">Birkbeck Business School · Research seminar</p>
+          <h1 data-cid="e-a3f834ef">Using AI (agents)<br>for research</h1>
+          <p data-cid="e-44680adc" class="lead"><br></p>
+          <p data-cid="e-4943ae80" class="small quiet" style="margin-top:1em;"><br></p>
+        </div>
+      </div>
+    </section>
+
+    <section data-cid="s-3303b671" class="pad">
+      <p data-cid="e-b8e72b90" class="marker">AI for research so far</p>
+      <h2 data-cid="e-00f838c2">The slop is real</h2>
+      <div class="cols" style="margin-top:0.5em;">
+        <div>
+          <p data-cid="e-0b097b1c" class="statline fragment" data-fragment-index="0"><span data-cid="e-14f04215" class="big">+42%</span> submissions to Organization Science after ChatGPT</p>
+          <p data-cid="e-fcffb9e9" class="statline fragment" data-fragment-index="2" style="margin-top:0.5em;">Heavily-AI papers: <span data-cid="e-34814689" class="big">3.2%</span>
+          reach revise-&amp;-resubmit vs <span data-cid="e-4f3be8b0" class="big">11.9%</span> for minimal-AI ones.</p>
+        </div>
+        <div>
+          <p data-cid="e-fb7c5cd4" class="statline fragment" data-fragment-index="1">AI use correlates with <strong>worse</strong> readability, more jargon.</p>
+          <p data-cid="e-36968e70" class="statline fragment" data-fragment-index="3" style="margin-top:0.5em;">Driven by <strong>incentives</strong>
+          (publish-or-perish, rankings), not bad faith.</p>
+        </div>
+      </div>
+      <p data-cid="e-9a66a6ba" class="tiny" style="margin-top:0.9em;"><cite key="gartenberg2026"><a data-cid="e-43d23681" href="https://doi.org/10.1287/orsc.2026.ed.v37.n3" target="_blank">Gartenberg et&nbsp;al. (2026)</a></cite></p>
+      <div data-cid="e-8c7e396d" class="brand">Reconsidering AI for research</div>
+    </section>
+
+    <section data-cid="s-fab10c01" class="pad">
+      <p data-cid="e-38308ed3" class="marker">AI for research so far</p>
+      <h2 data-cid="e-17509bd2">And fabrications are reaching print</h2>
+      <p data-cid="e-ff30c009" class="statline fragment" data-fragment-index="0"><strong>Hallucinated citations,</strong>  references to papers that <strong>don't exist,</strong> <br>are turning up in peer-reviewed conference papers, and rising fast:</p>
+      <div class="cols fragment" data-fragment-index="1" style="margin-top:0.6em;">
+        <div data-cid="e-712a3ea1" class="card">
+          <p class="statline" style="margin:0;"><span data-cid="e-39e384f8" class="big">0.28% &rarr; 2.59%</span></p>
+          <p data-cid="e-f04db45b" class="small quiet" style="margin-top:0.2em;">of papers carry a fabricated citation in a single year (ACL venues, 2024→2025).</p>
+        </div>
+        <div data-cid="e-d09cd94e" class="card">
+          <p class="statline" style="margin:0;"><span data-cid="e-e2bec253" class="big">154 papers</span></p>
+          <p data-cid="e-18bea197" class="small quiet" style="margin-top:0.2em;">at <strong>EMNLP 2025</strong> (3.7%) cited work that isn't real, <strong>100+ accepted as main papers</strong>.</p>
+        </div>
+      </div>
+      <p data-cid="e-68db07c3" class="small quiet fragment" data-fragment-index="2" style="margin-top:0.7em;">They look plausible and slip past review
+      &mdash; and this doesn't count misattribution.</p>
+      <p class="tiny" style="margin-top:0.9em;"><cite key="sakai2026"><a data-cid="e-8122dee3" href="https://arxiv.org/abs/2601.18724" target="_blank">Sakai et&nbsp;al. (2026)</a></cite></p>
+    </section>
+
+    <section data-cid="s-beddce70" class="split-section">
+      <div class="split">
+        <div class="split-art"><img src="assets/agent.png" alt="An agent working in a loop over files"></div>
+        <div class="split-copy">
+          <p data-cid="e-db1d28dd" class="marker">A different bet</p>
+          <h2 data-cid="e-127b56e5">AI agents can do better &mdash; when grounded &amp; verified.</h2>
+          <p data-cid="e-98f3eaf8" class="fragment">Instead of asking AI for an <em>answer</em>, you get it to do the
+          <strong>work</strong> — against your own files, with every step on show.</p>
+          <p data-cid="e-740db4cc" class="small quiet"><br></p>
+        </div>
+      </div>
+    </section>
+
+    <section data-cid="s-a9e01b01" class="pad">
+      <p data-cid="e-08efda94" class="marker">HOW AN AGENT WORKS</p>
+      <h2 data-cid="e-8027ecbf" style="margin-bottom:0.7em;">Getting AI to run in circles</h2>
+      <div class="flow" style="margin-top:1.3em;">
+        <span data-cid="e-2d4ab2fd" class="endcap fragment" data-fragment-index="0">your<br>goal&nbsp;&rsaquo;</span>
+        <div data-cid="e-b7c2f11e" class="node brain fragment" data-fragment-index="1">
+          <div data-cid="e-f89a5d86" class="nt">LLM</div>
+          <div data-cid="e-52f0de2f" class="ns">proposes the<br>next command</div>
+        </div>
+        <div class="wires">
+          <div class="wire fragment" data-fragment-index="2"><span data-cid="e-a11c2c68" class="ar">&mdash;&mdash;&rsaquo;</span> <b>command</b> &nbsp;<span data-cid="e-87ab735e" class="quiet">"read draft.md"</span></div>
+          <div class="wire fragment" data-fragment-index="4"><span data-cid="e-a23261f2" class="ar">&lsaquo;&mdash;&mdash;</span> <b>result</b> &nbsp;<span data-cid="e-df0bd28e" class="quiet">"5 DOIs found"</span></div>
+        </div>
+        <div data-cid="e-f4fa3c48" class="node fragment" data-fragment-index="3">
+          <div data-cid="e-d43d31eb" class="nt">Your machine</div>
+          <div data-cid="e-e91c1981" class="ns">runs it, sends<br>back the result</div>
+        </div>
+        <span data-cid="e-c2e2eb0b" class="endcap fragment" data-fragment-index="6">&rsaquo;&nbsp;final<br>answer</span>
+      </div>
+      <p data-cid="e-6bf008e7" class="loopnote fragment" data-fragment-index="5" style="margin-top:1.2em;"><span class="ar">&#8635;</span> repeat until the goal is met &mdash; the LLM only ever <em>writes text</em>; your machine does the doing.</p>
+      <div class="fragment" data-fragment-index="7" style="margin-top:1.5em;">
+        <p data-cid="e-be77efaf" class="label" style="text-align:center; margin-bottom:0.5em;">Tools it can call</p>
+        <div class="chips">
+          <span data-cid="e-469e4954" class="chip"><b>read</b> part of a file</span>
+          <span data-cid="e-e060770b" class="chip"><b>search</b> the web</span>
+          <span data-cid="e-51693fde" class="chip"><b>search</b> your files</span>
+          <span data-cid="e-c10f2535" class="chip"><b>edit</b> a file</span>
+          <span data-cid="e-85a4128a" class="chip"><b>run</b> code</span>
+          <span data-cid="e-eaf72266" class="chip"><b>ask</b> you a question</span>
+        </div>
+      </div>
+    </section>
+
+    <section data-cid="s-a9e01b02" class="pad">
+      <p data-cid="e-621e96c1" class="marker">The loop, in one task</p>
+      <h2 data-cid="e-f28710fb">"Are the DOIs in my draft correct?"<br><br></h2>
+      <div class="turns">
+        <div class="turn goal"><span data-cid="e-bdcabb52" class="tool">your goal</span><span data-cid="e-0497ee02" class="res">Check that the DOIs in <em>draft.md</em> are correct.</span></div>
+        <div class="turn fragment"><span data-cid="e-1f744f15" class="tool">read <br>part of file</span><span data-cid="e-e3d00861" class="res">opens <em>draft.md</em>'s reference section only &mdash; finds <strong>5 DOIs</strong>.</span></div>
+        <div class="turn fragment"><span data-cid="e-6fff6bbf" class="tool">search <br>the web</span><span data-cid="e-59863917" class="res">checks each against Crossref &mdash; #1&ndash;#4 match; <strong>#5 points to a different paper</strong>.</span></div>
+        <div class="turn fragment"><span data-cid="e-0bef5815" class="tool">ask you</span><span data-cid="e-bd116dc1" class="res">"DOI #5 doesn't match its title &mdash; replace it with the correct one?"</span></div>
+        <div class="turn fragment"><span data-cid="e-348a1ec8" class="tool">edit a file</span><span data-cid="e-b3196a6d" class="res">writes the corrected DOI into <em>draft.md</em>.</span></div>
+        <div class="turn done fragment"><span data-cid="e-ee08f4a7" class="tool">&#10003; done</span><span data-cid="e-55e3809b" class="res">4 correct, 1 fixed. Not from LLM "memory" but a reproducible source.</span></div>
+      </div>
+      <p data-cid="e-d00ce67e" class="small quiet" style="margin-top:0.8em; text-align:center;"><br></p>
+    </section>
+
+    <section data-cid="s-c68ff645" class="pad">
+      <p data-cid="e-eb0418ba" class="marker"><br></p>
+      <h2 data-cid="e-08768d2e">Adoption is taking off</h2>
+      <div class="cols" style="margin-top:0.5em;">
+        <div>
+          <p data-cid="e-5e733883" class="statline fragment" data-fragment-index="0"><span data-cid="e-4bcd8d3b" class="big">81%</span> have tried AI chatbots for research, but only <span data-cid="e-14ab556a" class="big">20%</span> use coding agents regularly.</p>
+          <p data-cid="e-f23a23b8" class="statline fragment" data-fragment-index="2" style="margin-top:0.6em;">More output <strong>early in the pipeline</strong>
+          (~75% more working papers), <strong>not</strong> in journal submissions yet.</p>
+        </div>
+        <div>
+          <p data-cid="e-23eb9b92" class="statline fragment" data-fragment-index="1">Adoption is <strong>uneven</strong>: economists 39% vs public health 6%;
+          male-named researchers adopt at <strong>2&times;</strong> the rate of female-named.</p>
+          <p data-cid="e-dd86d9f0" class="statline fragment" data-fragment-index="3" style="margin-top:0.6em;">Researchers are more optimistic about their <em>own</em>
+          productivity than about <em>the field</em>.</p>
+        </div>
+      </div>
+      <p data-cid="e-dadfb9c1" class="tiny" style="margin-top:0.9em;">Survey of 1,260 quantitative social scientists, self-selected for AI interest.
+      <cite key="lyttelton2026">Lyttelton et&nbsp;al. (2026)</cite></p>
+      <div data-cid="e-9ebbeb29" class="brand">Reconsidering AI for research</div>
+    </section>
+
+    <section data-cid="s-a61da924" class="split-section">
+      <div class="split">
+        <div class="split-art"><img src="assets/centaur.png" alt="A centaur contemplating a chess position"></div>
+        <div class="split-copy">
+          <p data-cid="e-f8835d5f" class="marker">The bet</p>
+          <h2 data-cid="e-b455722a">A competent researcher&nbsp;+ verified AI contributions can beat either alone</h2>
+          <p data-cid="e-1b9f5e85" class="fragment" data-fragment-index="0"><br>In <em>"centaur"</em> chess, human + machine teams <span data-cid="e-5265ea3d" class="fragment insert-red" data-fragment-index="1">used to </span>beat strong grandmasters <br>and engines playing on their own.</p>
+        </div>
+      </div>
+    </section>
+
+    <section data-cid="s-e1071a9c" class="pad">
+      <p data-cid="e-5c1cd7eb" class="marker">SO FAR WE ARE OK</p>
+      <h2 data-cid="e-7479d79f">On its own, agentic AI still lags competent researchers</h2>
+      <div class="cols fragment" data-fragment-index="0" style="margin-top:0.3em; align-items:center;">
+        <img src="assets/elo_lag.png" alt="Elo ratings: AER 1817, AEJ Policy 1717, APE (AI-generated) 1264"
+             style="flex:0 0 54%; max-width:54%; height:auto; border:1px solid var(--border); border-radius:8px; background:#fff; margin:0;">
+        <div style="flex:1;">
+          <p data-cid="e-b51cf97d">In head-to-head tournaments of economics papers, AI-generated papers (<strong>APE</strong>)
+          score well below journal-level work — a <strong>450–550&nbsp;Elo gap</strong> behind
+          <em>AER</em> and <em>AEJ: Policy</em>.</p>
+          <p data-cid="e-5e71f1d2" class="small quiet"><br></p>
+        </div>
+      </div>
+      <p data-cid="e-d41b37f7" class="tiny fragment" data-fragment-index="0" style="margin-top:0.8em;">Project APE — Autonomous Policy Evaluation (non-peer-reviewed automated benchmark),<br>      Social Catalyst Lab, Univ. of Zurich.      <a data-cid="e-57534f34" href="https://ape.socialcatalystlab.org/" target="_blank">ape.socialcatalystlab.org</a>
+      (Jun 2026). </p>
+    </section>
+
+    <section data-cid="s-1c7927df" class="pad">
+      <p data-cid="e-e09abd34" class="marker"><br></p>
+      <h2 data-cid="e-6554565f">Four habits for using it well</h2>
+      <div class="habits">
+        <div class="fragment" data-fragment-index="0">
+          <h3 data-cid="e-7e61893c">Context</h3>
+          <p data-cid="e-8da5ebd8">Tell it what you actually want: the goal, the constraints, the audience.</p>
+        </div>
+        <div class="fragment" data-fragment-index="1">
+          <h3 data-cid="e-a4a5cb20">Grounding</h3>
+          <p data-cid="e-845f4d82">Point it at your own sources, not its memory.</p>
+        </div>
+        <div class="fragment" data-fragment-index="2">
+          <h3 data-cid="e-01b95a05">Plan/questions</h3>
+          <p data-cid="e-d734c910">Ask for the plan, or its questions, before you ask for the output.</p>
+        </div>
+        <div class="fragment" data-fragment-index="3">
+          <h3 data-cid="e-4d20d842">Verify</h3>
+          <p data-cid="e-ec4453b8">Check what it hands back - ideally both manually and automatically.</p>
+        </div>
+      </div>
+      <p data-cid="e-dd92f523" class="small quiet fragment" data-fragment-index="4" style="margin-top:1em;">These apply to <strong>any agent</strong> you use: Codex (OpenAI) and Claude Code (Anthropic) are in the lead.</p>
+      <div data-cid="e-59ac3138" class="brand">Reconsidering AI for research</div>
+    </section>
+
+    <section data-cid="s-92045588" class="split-section">
+      <div class="split">
+        <div class="split-art"><img src="assets/launch.png" alt="Three tasks launched in parallel"></div>
+        <div class="split-copy">
+          <p data-cid="e-64221b34" class="marker">Let's GET THIS StARTED</p>
+          <h2 data-cid="e-51fb82e6">Three demos</h2>
+          <ol style="font-size:0.92em;">
+            <li data-cid="e-7ed8a3e8"><strong>Data extraction:</strong> power-analysis reporting across recent management papers.</li>
+            <li data-cid="e-ab313fc0"><strong>Data analysis:</strong> a pre-registration + dataset turned into a clean, reproducible report.</li>
+            <li data-cid="e-667ece83"><strong>Teaching material creation:</strong> build a seminar resource site, and fact-check it.</li>
+          </ol>
+          <p data-cid="e-259011c2" class="small quiet">Then we talk while they run.</p>
+        </div>
+      </div>
+    </section>
+
+    <section data-cid="s-d7a01a01" class="pad">
+      <p data-cid="e-42cb7aca" class="marker">Demo 1 · the prompt</p>
+      <h2 data-cid="e-9cf4266f">Find &amp; extract: power-analysis reporting</h2>
+      <ul class="small" style="margin-top:0.4em;">
+        <li data-cid="e-240c2bf5"><strong>Goal:</strong> how recent management research justifies the effect sizes it powers its studies for.</li>
+        <li data-cid="e-dced8933"><strong>Ground:</strong> I provide 2026 articles for 3 ABS 4 journals; agent reads the full text.</li>
+        <li data-cid="e-00de045c"><strong>Extract per paper:</strong> type, assumed effect size, <em>how it was justified</em>, α, power, N, software, each with a <strong>verbatim source quote</strong>.</li>
+        <li data-cid="e-6e636ba0"><strong>Prepare to verify:</strong> "Quote the source for every value; write 'not reported' rather than guessing."</li>
+      </ul>
+    </section>
+
+    <section data-cid="s-d7a01a02" class="pad">
+      <p data-cid="e-facfb7e7" class="marker">Demo 2 · the prompt</p>
+      <h2 data-cid="e-2add4a84">Pre-registration + data → a reproducible report</h2>
+      <ul class="small" style="margin-top:0.4em;">
+        <li data-cid="e-bba5ab6f"><strong>Ground:</strong> a pre-registration, data + codebook (ALLBUS 2016)</li>
+        <li data-cid="e-a26acdca"><strong>Task:</strong> reproduce the <em>pre-registered</em> analysis as a clean Quarto report that renders end to end.</li>
+        <li data-cid="e-59bb04e7"><strong>Plan:</strong> ask me any questions, and document areas to check.</li>
+        <li data-cid="e-5a139f4e"><strong>Verify:</strong> ensure all output is generated by a single commented code file.</li>
+      </ul>
+    </section>
+
+    <section data-cid="s-d7a01a03" class="pad">
+      <p data-cid="e-8e1cde29" class="marker">Demo 3 · the prompts</p>
+      <h2 data-cid="e-db68996e">Build a resource site for today, then fact-check it</h2>
+      <div class="cols" style="margin-top:0.4em;">
+        <div data-cid="e-8ff5b710" class="card">
+          <div data-cid="e-8e1e3b0f" class="label">Builder</div>
+          <p data-cid="e-2bb49047" class="small">Build the site from these slides and my email course; follow its <strong>style guide</strong> and match an existing site's structure. <br>Every claim cites a <strong>real, verified</strong> source.</p>
+        </div>
+        <div data-cid="e-337678f0" class="card accent">
+          <div data-cid="e-9d73cbbd" class="label">Checker — a fresh agent</div>
+          <p data-cid="e-00bd4f33" class="small">Check every claim (file:line) and every DOI; flag invented or stale AI-tool claims, or areas that lack clarity. <br>Report only, don't fix.</p>
+        </div>
+      </div>
+    </section>
+
+    <section data-cid="s-f10d6076" class="pad">
+      <p data-cid="e-6b9f5b87" class="marker">The FOUR habits</p>
+      <h2 data-cid="e-18bd660f">Made concrete</h2>
+      <ul style="margin-top:0.4em;">
+        <li data-cid="e-4d2fa2e1"><strong>Context &amp; grounding:</strong> full-text retrieval for Demo 1, pre-registration that constrains Demo 2, personal style guide for Demo 3</li>
+        <li data-cid="e-6b064cff"><strong>Plan:</strong> under-emphasized here, can be developed with AI in chat.</li>
+        <li data-cid="e-5ab6af54"><strong>Verify:</strong> a validated source quote per cell (Demo 1); the agent's results checked against a human analysis (Demo 2); an <em>independent</em> AI fact-checker (Demo 3).</li>
+      </ul>
+      <p data-cid="e-18c7e732" class="small quiet" style="margin-top:0.9em;"><br></p>
+      <div data-cid="e-31dc4422" class="brand">Reconsidering AI for research</div>
+    </section>
+
+    <section data-cid="s-a8076f2c" class="pad">
+      <p data-cid="e-a0fc43e4" class="marker">Grounding &amp; division of labour</p>
+      <h2 data-cid="e-557745cb">Ground it in data and deterministic code</h2>
+      <p data-cid="e-87aeb1b0"><br></p>
+      <div data-cid="e-fdefa8d5" class="card" style="margin-top:0.7em;">
+        <div class="cols" style="gap:6%;">
+          <div>
+            <div data-cid="e-b193ca5d" class="label">The LLM</div>
+            <p data-cid="e-b9915783" class="small">Reads your sources, extracts and narrowly annotates, drafts the analysis code.</p>
+          </div>
+          <div>
+            <div data-cid="e-a4ce3361" class="label">Deterministic code</div>
+            <p data-cid="e-df449c96" class="small">Runs the numbers reproducibly: tests and outputs you can inspect and re-run.</p>
+          </div>
+        </div>
+      </div>
+      <p data-cid="e-443d7f4c" class="small quiet" style="margin-top:0.8em;">Demo 1 quotes its source for every value; <br>Demo 2's code can be validated by a researcher (or with simulated test data).</p>
+      <div data-cid="e-60574fd1" class="brand">Reconsidering AI for research</div>
+    </section>
+
+    <section data-cid="s-0e3966fd" class="pad">
+      <p data-cid="e-cccc3b47" class="marker">Review the outputs</p>
+      <h2 data-cid="e-8fca0f91">Let's see what they did — and how</h2>
+      <p data-cid="e-f941e3fd">Look at the <strong>output</strong>, the agents <strong>response</strong>, and the <strong>trace.</strong></p>
+      <ul class="small" style="margin-top:0.5em;">
+        <li data-cid="e-9ef63bb1">Demo 2: the "knitted" report. Ask for comparison to the paper.</li>
+        <li data-cid="e-d3188e55">Demo 1: the extracted table. Ask for deterministic validation.</li>
+        <li data-cid="e-a318b40b">Demo 3: the site. Ask for an independent fact-check.<br></li>
+      </ul>
+      <p data-cid="e-b61fa25b" class="small quiet" style="margin-top:0.7em;"><br></p>
+      <div data-cid="e-cc942dcf" class="brand">Reconsidering AI for research</div>
+    </section>
+
+    <section data-cid="s-c39df2dc" class="split-section">
+      <div class="split">
+        <div class="split-copy">
+          <p data-cid="e-07554065" class="marker">Holding on to our own thinking</p>
+          <h2 data-cid="e-a151bcb3">Cognitive offloading,<br>scaffolding and<br>ownership</h2>
+          <p data-cid="e-d26e9ddc" class="lead quiet"><br></p>
+        </div>
+        <div class="split-art"><img src="assets/genie.png" alt="A genie rising from a lamp — a power you summon but can't simply put back"></div>
+      </div>
+      <aside class="notes">
+        Spoken, not on the slide: I use these on the borderline of what I find acceptable in
+        giving up cognitive control. An API outage mid-class showed me how fast you get dependent.
+        I've had to make myself think independently again. This is a real cost, not a footnote —
+        and managing it is part of using the tools well.
+      </aside>
+      <div data-cid="e-c8d4d844" class="brand">Reconsidering AI for research</div>
+    </section>
+
+    <section data-cid="s-13557afe" class="pad">
+      <p data-cid="e-c220de43" class="marker"><br></p>
+      <h2 data-cid="e-c6deaa9b">Can I even use AI with my data?</h2>
+      <div class="spectrum">
+        <div class="ok"><span data-cid="e-f197dbfb" class="tag">Easy</span><p data-cid="e-59309a52">Published (OA) papers, public datasets: Demos 1 &amp; 3.</p></div>
+        <div class="mid"><span data-cid="e-7ac790e4" class="tag">With care</span><p data-cid="e-6cbb6ed2">Publishable / de-identified data, especially used agentically: ALLBUS in Demo 2.</p></div>
+        <div class="no"><span data-cid="e-16c495cc" class="tag">Never*</span><p data-cid="e-8306693d">Identifiable participant data; (others' sensitive unpublished work).</p></div>
+      </div>
+      <p data-cid="e-d7ca555f" class="tiny quiet" style="margin-top:0.8em;">* without a data processing agreement (and ethics approval), e.g. an enterprise contract or an approved secure environment.</p>
+      <div data-cid="e-17ccb114" class="brand">Reconsidering AI for research</div>
+    </section>
+
+    <section data-cid="s-5288afb4" class="pad">
+      <p data-cid="e-6bb85322" class="marker">Keeping up</p>
+      <h2 data-cid="e-2f462b35">The durability problem</h2>
+      <p data-cid="e-728fb743">Specific claims about these tools go stale fast — the best model this month<br>      isn't the one from three months ago (Sonnet 4.5 → Opus 4.8 → <s>Mythos/Fable</s> …).</p>
+      <p data-cid="e-4cef20f5" style="margin-top:0.6em;">The <strong>durable</strong> thing is the mental model: context, grounding,<br>      plan, verify. Within that, can experiment with pushing the boundaries.</p>
+      <div data-cid="e-e71ec8ea" class="brand">Reconsidering AI for research</div>
+    </section>
+
+    <section data-cid="s-76150028" class="pad">
+      <p data-cid="e-d2ecbc4d" class="marker">Demo 4 · "peer" review</p>
+      <h2 data-cid="e-3b2a47e8">A review agent that dives deep</h2>
+      <p data-cid="e-98e3e5af"><a data-cid="e-8dd27582" href="https://coarse.ink" target="_blank">coarse.ink</a> is an open source review agent. Can use it online, or in your own agent. Long-running background skill (15–25 min/run).<br><br> Let's look at the <strong>report it produced</strong> on a recent preprint of mine. <br>Earlier reviews caught important issues that we addressed.</p>
+      <p data-cid="e-ee591b87" style="margin-top:0.5em;"><br></p>
+      <div data-cid="e-23479a8a" class="brand">Reconsidering AI for research</div>
+    </section>
+
+    <section data-cid="s-89ada283" class="pad" style="display:flex; flex-direction:column; justify-content:center; height:100%;">
+      <p data-cid="e-8572c490" class="marker">Getting started</p>
+      <h2 data-cid="e-3006a4eb" style="font-size:1.8em; margin-bottom:0.5em;">How to get started</h2>
+      <div class="cols" style="gap:4%;">
+        <div data-cid="e-432d88c7" class="card">
+          <div data-cid="e-3427c554" class="label">Step 1 · Pick an agent</div>
+          <p data-cid="e-e30fd636" class="small">Claude Code, Codex (ChatGPT), or OpenCode (open models, cheaper &amp; rougher).</p>
+        </div>
+        <div data-cid="e-89381f6f" class="card">
+          <div data-cid="e-a06a333a" class="label">Step 2 · Subscribe</div>
+          <p data-cid="e-8463dcdb" class="small">A paid plan at ~£20/month gets you started, ChatGPT likely best value.</p>
+        </div>
+        <div data-cid="e-d01dd657" class="card">
+          <div data-cid="e-b9c0d346" class="label">Step 3 · Experiment</div>
+          <p data-cid="e-a1411bf3" class="small">Boring file management tasks, verifiable analysis code, second-coding, self-review, webpages ...</p>
+        </div>
+      </div>
+      <div data-cid="e-df5ff2f9" class="card accent fragment" style="margin-top:0.7em;">
+        <div data-cid="e-0212da15" class="label">Choose deliberately</div>
+        <p data-cid="e-73bd5f6a" class="small">Decide where you want to <strong>learn something</strong> and do it your way, <br>and where you just want to
+        <strong>get things done</strong> (deskilling vs. outsourcing).</p>
+      </div>
+      <div data-cid="e-74c3ca6b" class="brand">Reconsidering AI for research</div>
+    </section>
+
+    <section data-cid="s-saf01a01" class="pad">
+      <p data-cid="e-b15f1e4d" class="marker">Lower-stakes starting points</p>
+      <h2 data-cid="e-09c8be92">Start by building comfort with safer tasks</h2>
+      <ul class="small" style="margin-top:0.5em;">
+        <li data-cid="e-c856c779"><strong>Like Demo 1:</strong> rename files consistently; build a codebook prefilled with your file list and Crossref metadata.</li>
+        <li data-cid="e-fd441a1e"><strong>Like Demo 2:</strong> run exploratory analyses on a dataset, or turn an existing analysis (e.g. from SPSS) into one reproducible report.</li>
+        <li data-cid="e-7ccb9980"><strong>Like Demo 3:</strong> turn your own content, verbatim, into a clean website, and get help deciding where to host it.</li>
+      </ul>
+      <p data-cid="e-901f380a" class="small quiet" style="margin-top:0.8em;">Low stakes, easy to verify ... a good place to build the habits.</p>
+    </section>
+
+    <section data-cid="s-20367391" class="pad">
+      <p data-cid="e-17b53b34" class="marker">Going further</p>
+      <h2 data-cid="e-7236b2ff">If you want to go deeper</h2>
+      <p data-cid="e-ce0134d4">The resource site Demo 3 just built was made from my <strong>GenAI email course</strong>.<br>      Just about to launch, more thorough than this session (and less focused on agents).</p>
+      <p data-cid="e-c6a8aafe" class="small quiet" style="margin-top:0.6em;"><br></p>
+      <div data-cid="e-5abc5bec" class="brand">Reconsidering AI for research</div>
+    </section>
+
+    <section data-cid="s-7db90c50" class="split-section">
+      <div class="split">
+        <div class="split-art"><img class="fit" src="assets/conversation.png" alt="Two speech bubbles in conversation"></div>
+        <div class="split-copy">
+          <p data-cid="e-3cd091ee" class="marker">Over to you</p>
+          <h2 data-cid="e-74d06520">Questions &amp; comments</h2>
+        </div>
+      </div>
+      <p data-cid="e-1981e025" style="position:absolute; bottom:1em; left:3.5%; width:11em; margin:0; font-size:0.5em; line-height:1.4; color:var(--text-2); text-align:left;">Slides made with Claude Code &middot; illustrations generated with gpt&#8209;image&#8209;2, via Claude Code.</p>
+      <div data-cid="e-19deef58" class="brand">Reconsidering AI for research</div>
+    </section>
+
+    <section data-cid="s-7df5a448" class="content">
+      <p data-cid="e-78341bc7" class="marker">References</p>
+      <h2 data-cid="e-271b8f24">References</h2>
+      <div id="bibliography"></div>
+      <aside class="notes">Auto-populated from references.json by citations.js.</aside>
+    </section>
+
+  
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script>
+  Reveal.initialize({
+    width: 1280,
+    height: 720,
+    margin: 0.04,
+    hash: true,
+    transition: 'fade',
+    transitionSpeed: 'fast',
+    slideNumber: 'c/t',
+    plugins: [ RevealNotes ],
+  });
+</script>
+<script src="citations.js"></script>
+
+</body>
+</html>

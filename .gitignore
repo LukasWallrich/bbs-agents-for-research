@@ -1,0 +1,6 @@
+.DS_Store
+*.bak
+scratch*
+slides/index.comments/
+slides/index.comments.json
+slides/assets/orig/

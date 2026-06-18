@@ -1,0 +1,26 @@
+{
+  "lyttelton2026": {
+    "authors": "Lyttelton, T., Massenkoff, M., & Wilmers, N.",
+    "year": 2026,
+    "title": "Coding agents in the social sciences",
+    "journal": "Anthropic",
+    "url": "https://www.anthropic.com/research/coding-agents-social-sciences"
+  },
+  "sakai2026": {
+    "authors": "Sakai, Y., Kamigaito, H., & Watanabe, T.",
+    "year": 2026,
+    "title": "HalluCitation matters: Revealing the impact of hallucinated references with 300 hallucinated papers in ACL conferences",
+    "journal": "arXiv preprint arXiv:2601.18724",
+    "url": "https://arxiv.org/abs/2601.18724"
+  },
+  "gartenberg2026": {
+    "authors": "Gartenberg, C., Hasan, S., Murray, A., & Pierce, L.",
+    "year": 2026,
+    "title": "More versus better: Artificial intelligence, incentives, and the emerging crisis in peer review",
+    "journal": "Organization Science",
+    "volume": "37",
+    "issue": "3",
+    "pages": "795-812",
+    "doi": "10.1287/orsc.2026.ed.v37.n3"
+  }
+}
