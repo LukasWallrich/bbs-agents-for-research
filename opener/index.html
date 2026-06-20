@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What is an LLM, really?</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FDFBF7; --surface:#FFFFFF; --text:#2D2A24; --text-2:#5C574D; --text-3:#8A8378;
+  --accent:#8B2635; --accent-lt:#F5E6E8; --border:#E8E4DC; --highlight:#FEF3C7;
+  --ok:#2f6f4e; --ok-lt:#E6F0EA; --warn:#b8801f; --bar:#C9485B;
+  --serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --sans:"Inter",-apple-system,"Helvetica Neue",Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);
+  font-size:clamp(15px,1.7vw,21px);line-height:1.5;overflow:hidden;-webkit-font-smoothing:antialiased}
+
+/* ---------- deck / slides ---------- */
+.deck{position:fixed;inset:0}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+  padding:6vh 7vw;opacity:0;visibility:hidden;transform:translateY(14px);
+  transition:opacity .45s ease,transform .45s ease,visibility .45s;overflow-y:auto}
+.slide.active{opacity:1;visibility:visible;transform:none}
+.slide.prev{transform:translateY(-14px)}
+.wrap{width:100%;max-width:1080px;margin:0 auto}
+
+h1{font-family:var(--serif);font-weight:500;font-size:clamp(2.1em,5.2vw,3.3em);line-height:1.04;
+  letter-spacing:-.02em;margin-bottom:.35em}
+h2{font-family:var(--serif);font-weight:500;font-size:clamp(1.45em,3.2vw,2em);line-height:1.1;
+  letter-spacing:-.015em;margin-bottom:.4em}
+h3{font-family:var(--serif);font-weight:500;font-size:1.15em;color:var(--text);margin-bottom:.3em}
+p{margin-bottom:.7em;max-width:46ch}
+p.wide{max-width:64ch}
+strong{color:var(--accent);font-weight:600}
+em{font-style:italic}
+.marker{font-family:var(--sans);text-transform:uppercase;letter-spacing:.18em;font-size:.62em;
+  font-weight:600;color:var(--accent);margin-bottom:.8em}
+.lead{font-size:1.18em;color:var(--text-2);line-height:1.45}
+.quiet{color:var(--text-2)} .small{font-size:.82em} .tiny{font-size:.68em;color:var(--text-3)}
+.serif{font-family:var(--serif)}
+.hl{background:linear-gradient(transparent 58%,var(--highlight) 58%);padding:0 .05em}
+.divider{height:1px;background:var(--border);margin:1em 0}
+ul{margin:.2em 0 .8em 1.1em} li{margin-bottom:.4em;max-width:52ch}
+
+/* model/prompt provenance chip */
+.prov{display:inline-flex;align-items:center;gap:.5em;flex-wrap:wrap;font-family:var(--mono);
+  font-size:.66em;color:var(--text-3);background:var(--surface);border:1px solid var(--border);
+  border-radius:6px;padding:.3em .6em;margin-top:.4em}
+.prov b{color:var(--accent);font-weight:500}
+.prov .dot{width:6px;height:6px;border-radius:50%;background:var(--ok)}
+
+/* cards / columns */
+.cols{display:flex;gap:4%;align-items:flex-start;flex-wrap:wrap}
+.cols>div{flex:1;min-width:240px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1em 1.1em}
+.card.accent{border-color:var(--accent);background:var(--accent-lt)}
+.card.ok{border-color:var(--ok);background:var(--ok-lt)}
+.label{font-family:var(--sans);text-transform:uppercase;letter-spacing:.12em;font-size:.6em;
+  font-weight:600;color:var(--accent);margin-bottom:.35em}
+
+/* buttons */
+button{font-family:var(--sans);cursor:pointer}
+.btn{display:inline-flex;align-items:center;gap:.5em;background:var(--accent);color:#fff;border:none;
+  border-radius:8px;padding:.6em 1.1em;font-size:.85em;font-weight:600;transition:filter .15s,transform .05s}
+.btn:hover{filter:brightness(1.08)} .btn:active{transform:translateY(1px)}
+.btn.ghost{background:var(--surface);color:var(--accent);border:1px solid var(--accent)}
+.btn:disabled{opacity:.4;cursor:default}
+.btnrow{display:flex;gap:.6em;flex-wrap:wrap;align-items:center;margin-top:.3em}
+
+/* ---------- next-token widget ---------- */
+.nt{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:.9em 1.2em;margin-top:.3em}
+.nt .sent{font-family:var(--serif);font-size:1.3em;line-height:1.35;margin-bottom:.5em}
+.nt .sent .fixed{color:var(--text)}
+.nt .sent .chosen{color:var(--accent);font-weight:600}
+.nt .sent .cursor{display:inline-block;width:.5em;height:1.05em;background:var(--accent);
+  vertical-align:-.12em;margin-left:.08em;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.bars{display:flex;flex-direction:column;gap:.26em;margin-top:.2em}
+.bar{display:flex;align-items:center;gap:.7em;cursor:pointer;border-radius:7px;padding:.12em .4em;
+  transition:background .12s}
+.bar:hover{background:var(--accent-lt)}
+.bar .tok{font-family:var(--mono);font-size:.82em;min-width:7.5em;text-align:right;color:var(--text);white-space:pre}
+.bar .track{flex:1;height:1.35em;background:var(--bg);border-radius:5px;overflow:hidden;border:1px solid var(--border)}
+.bar .fill{height:100%;background:var(--bar);border-radius:5px 0 0 5px;transition:width .5s cubic-bezier(.2,.7,.3,1);min-width:2px}
+.bar .pct{font-family:var(--mono);font-size:.74em;color:var(--text-2);min-width:4.2em}
+.bar.dim{opacity:.45}
+.nt .hint{font-size:.74em;color:var(--text-3);margin-top:.7em}
+.spreadtag{display:inline-block;font-size:.72em;font-weight:600;padding:.15em .6em;border-radius:20px;margin-left:.5em}
+.spreadtag.sure{background:var(--ok-lt);color:var(--ok)}
+.spreadtag.unsure{background:var(--accent-lt);color:var(--accent)}
+
+/* stems small-multiples */
+.stemgrid{display:grid;grid-template-columns:1fr 1fr;gap:.7em;margin-top:.25em}
+.stembox{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.65em .85em}
+.stembox .stemtext{font-family:var(--serif);font-size:1em;margin-bottom:.35em;color:var(--text)}
+.stembox .stemtext .nx{color:var(--text-3)}
+.stembox .bars{gap:.18em} .stembox .bar{padding:.06em .35em} .stembox .bar .track{height:1.15em}
+.stembox .bar .tok{min-width:5.5em;font-size:.78em}
+
+/* run-again / stochasticity */
+.runs{display:flex;flex-direction:column;gap:.35em;margin-top:.25em}
+.runline{font-family:var(--serif);font-size:1.02em;padding:.32em .8em;background:var(--surface);
+  border:1px solid var(--border);border-radius:9px;opacity:0;transform:translateX(-8px);
+  transition:opacity .4s,transform .4s;display:flex;align-items:center;gap:.7em}
+.runline.show{opacity:1;transform:none}
+.runline .n{font-family:var(--mono);font-size:.66em;color:var(--text-3);min-width:1.6em}
+.runline.same{border-color:var(--ok);background:var(--ok-lt)}
+
+/* chat exchange */
+.chat{display:flex;flex-direction:column;gap:.7em;margin-top:.3em}
+.msg{max-width:88%;padding:.7em 1em;border-radius:14px;font-size:.92em;line-height:1.45;white-space:pre-wrap}
+.msg.u{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+.msg.a{align-self:flex-start;background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:4px}
+.msg .who{font-family:var(--sans);font-size:.62em;text-transform:uppercase;letter-spacing:.1em;
+  font-weight:600;opacity:.7;margin-bottom:.3em;display:block}
+.reveal-step{opacity:0;max-height:0;overflow:hidden;transition:opacity .4s,max-height .5s}
+.reveal-step.show{opacity:1;max-height:1000px}
+
+/* citation / verify */
+.cite{font-family:var(--mono);font-size:.8em;line-height:1.45;background:var(--surface);
+  border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:.7em 1em;white-space:pre-wrap}
+.verifyrow{margin-top:.55em}
+.verdict{margin-top:.55em;padding:.7em .95em;border-radius:10px;font-size:.88em;opacity:0;
+  max-height:0;overflow:hidden;transition:opacity .4s,max-height .5s}
+.verdict.show{opacity:1;max-height:300px}
+.verdict.bad{background:var(--accent-lt);border:1px solid var(--accent);color:var(--text)}
+.verdict.good{background:var(--ok-lt);border:1px solid var(--ok)}
+.verdict b{color:var(--accent)} .verdict.good b{color:var(--ok)}
+
+/* tokens */
+.tokrow{display:flex;flex-wrap:wrap;gap:.3em;margin:.5em 0}
+.tok-chip{font-family:var(--mono);font-size:.9em;padding:.25em .5em;border-radius:6px;
+  background:var(--accent-lt);border:1px solid var(--border);color:var(--text)}
+.tok-chip.r{background:var(--highlight);font-weight:600}
+.countbox{display:flex;gap:1.2em;align-items:center;flex-wrap:wrap;margin-top:.5em}
+.bignum{font-family:var(--serif);font-size:2.4em;font-weight:600}
+.bignum.wrong{color:var(--accent)} .bignum.right{color:var(--ok)}
+
+/* training stages diagram */
+.stages{display:flex;gap:1.2em;align-items:stretch;margin-top:.5em;flex-wrap:wrap}
+.stage{flex:1;min-width:240px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1em 1.1em;position:relative}
+.stage .num{font-family:var(--serif);font-size:1.6em;color:var(--accent-lt);position:absolute;top:.3em;right:.5em;font-weight:600}
+.stage h3{color:var(--accent)}
+.arrowbetween{display:flex;align-items:center;color:var(--accent);font-size:1.5em}
+
+/* agent bridge */
+.loop{display:flex;align-items:center;justify-content:center;gap:1em;flex-wrap:wrap;margin:.6em 0}
+.lnode{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.6em 1em;text-align:center;min-width:7em}
+.lnode.core{border-color:var(--accent);background:var(--accent-lt)}
+.lnode .t{font-family:var(--serif);font-size:1.05em} .lnode .s{font-size:.62em;color:var(--text-2)}
+.larrow{color:var(--accent);font-weight:700;font-size:1.2em}
+
+/* ---------- chrome ---------- */
+.progress{position:fixed;top:0;left:0;height:3px;background:var(--accent);z-index:50;transition:width .4s}
+.counter{position:fixed;bottom:1.1em;right:1.4em;font-family:var(--mono);font-size:.72em;color:var(--text-3);z-index:50}
+.counter b{color:var(--accent)}
+.nav{position:fixed;bottom:1em;left:1.4em;display:flex;gap:.4em;z-index:50}
+.nav button{width:2.1em;height:2.1em;border-radius:50%;border:1px solid var(--border);background:var(--surface);
+  color:var(--accent);font-size:1em;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.nav button:hover{background:var(--accent-lt)}
+.dots{position:fixed;bottom:1.15em;left:50%;transform:translateX(-50%);display:flex;gap:.42em;z-index:50}
+.dots button{width:8px;height:8px;border-radius:50%;border:none;background:var(--border);padding:0;transition:all .2s}
+.dots button.on{background:var(--accent);transform:scale(1.35)}
+.brandmark{position:fixed;top:1em;left:1.4em;font-family:var(--mono);font-size:.66em;color:var(--text-3);z-index:50;letter-spacing:.04em}
+.kbd{font-family:var(--mono);font-size:.85em;background:var(--surface);border:1px solid var(--border);
+  border-bottom-width:2px;border-radius:5px;padding:.05em .45em;color:var(--text-2)}
+.madeby{display:inline-flex;align-items:center;gap:.5em;margin-top:1.6em;font-family:var(--mono);
+  font-size:.72em;color:var(--accent);background:var(--accent-lt);border:1px solid var(--border);
+  border-radius:30px;padding:.4em .9em;letter-spacing:.02em}
+.madeby .spark{animation:spin 4s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (max-height:780px){.slide{padding:4.3vh 6vw}
+  /* projector height (~720p): keep the stochasticity slide's provenance chip on-screen */
+  h2{margin-bottom:.3em} p{margin-bottom:.55em}
+  .runline{padding:.18em .8em;font-size:.92em} .runs{gap:.22em} #stoNote{margin-top:.3em}
+  #stoPrompt{margin-bottom:.1em} .label{margin-bottom:.25em}}
+@media (max-width:640px){.stemgrid{grid-template-columns:1fr}.dots{display:none}}
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+<div class="brandmark">LLMs — a 7-minute grounding · BBS</div>
+<div class="deck" id="deck"></div>
+<div class="dots" id="dots"></div>
+<div class="nav"><button id="prev">‹</button><button id="next">›</button></div>
+<div class="counter"><b id="cur">1</b> / <span id="tot">1</span></div>
+
+<script>
+window.DATA = {"meta": {"date": "June 2026", "bx_model": "gpt-5.5", "lp_model": "gpt-3.5-turbo-instruct"}, "tree": {"stem": "Once upon a time, there was a", "root": {"top": [{"token": " little", "p": 0.07476}, {"token": " beautiful", "p": 0.06775}, {"token": " young", "p": 0.05367}, {"token": " girl", "p": 0.035}, {"token": " small", "p": 0.03185}, {"token": " king", "p": 0.02932}, {"token": " man", "p": 0.0265}, {"token": " kingdom", "p": 0.02278}, {"token": " very", "p": 0.0189}, {"token": " boy", "p": 0.01797}], "children": {" little": {"top": [{"token": " girl", "p": 0.50944}, {"token": " boy", "p": 0.14567}, {"token": " princess", "p": 0.02336}, {"token": " village", "p": 0.01975}, {"token": " old", "p": 0.01071}, {"token": " prince", "p": 0.01015}, {"token": " red", "p": 0.00895}, {"token": " bird", "p": 0.0088}, {"token": " town", "p": 0.00862}, {"token": " mouse", "p": 0.00788}], "children": {" girl": {"top": [{"token": " named", "p": 0.4822}, {"token": " who", "p": 0.24479}, {"token": " called", "p": 0.0707}, {"token": ".", "p": 0.05495}, {"token": ",", "p": 0.02521}, {"token": " with", "p": 0.02111}, {"token": " whose", "p": 0.01444}, {"token": "\n\n", "p": 0.01149}, {"token": " that", "p": 0.00883}, {"token": ".\n\n", "p": 0.00647}], "children": {}}, " boy": {"top": [{"token": " named", "p": 0.50096}, {"token": " who", "p": 0.245}, {"token": ".", "p": 0.0532}, {"token": " called", "p": 0.04631}, {"token": ",", "p": 0.02551}, {"token": " whose", "p": 0.01739}, {"token": " with", "p": 0.01302}, {"token": " and", "p": 0.01194}, {"token": "\n\n", "p": 0.01171}, {"token": " that", "p": 0.00876}], "children": {}}, " princess": {"top": [{"token": " named", "p": 0.35416}, {"token": " who", "p": 0.29647}, {"token": ".", "p": 0.10433}, {"token": " called", "p": 0.05017}, {"token": ",", "p": 0.03877}, {"token": " whose", "p": 0.01667}, {"token": " that", "p": 0.0146}, {"token": " in", "p": 0.01429}, {"token": "\n\n", "p": 0.01403}, {"token": " living", "p": 0.01353}], "children": {}}, " village": {"top": [{"token": " in", "p": 0.15563}, {"token": " nestled", "p": 0.12777}, {"token": " called", "p": 0.12095}, {"token": " at", "p": 0.06188}, {"token": ",", "p": 0.05522}, {"token": ".", "p": 0.05127}, {"token": " that", "p": 0.04954}, {"token": " on", "p": 0.04803}, {"token": " named", "p": 0.03868}, {"token": " where", "p": 0.03741}], "children": {}}}}, " beautiful": {"top": [{"token": " princess", "p": 0.30752}, {"token": " girl", "p": 0.07621}, {"token": " kingdom", "p": 0.07243}, {"token": " young", "p": 0.04496}, {"token": " and", "p": 0.03033}, {"token": ",", "p": 0.02939}, {"token": " little", "p": 0.02343}, {"token": " forest", "p": 0.02227}, {"token": " land", "p": 0.01954}, {"token": " fairy", "p": 0.01715}], "children": {" princess": {"top": [{"token": " named", "p": 0.38944}, {"token": " who", "p": 0.25789}, {"token": ".", "p": 0.13128}, {"token": ",", "p": 0.04901}, {"token": " called", "p": 0.02062}, {"token": ".\n\n", "p": 0.01638}, {"token": " with", "p": 0.01558}, {"token": " living", "p": 0.01194}, {"token": " whose", "p": 0.01173}, {"token": " in", "p": 0.01097}], "children": {}}, " girl": {"top": [{"token": " named", "p": 0.56735}, {"token": " who", "p": 0.11902}, {"token": " called", "p": 0.08009}, {"token": ".", "p": 0.05608}, {"token": ",", "p": 0.03607}, {"token": " with", "p": 0.03054}, {"token": " whose", "p": 0.02273}, {"token": " in", "p": 0.00942}, {"token": "\n\n", "p": 0.00898}, {"token": " living", "p": 0.0071}], "children": {}}, " kingdom": {"top": [{"token": " called", "p": 0.15267}, {"token": " in", "p": 0.14142}, {"token": " where", "p": 0.09589}, {"token": " that", "p": 0.08767}, {"token": ",", "p": 0.07433}, {"token": ".", "p": 0.07032}, {"token": " known", "p": 0.04687}, {"token": " ruled", "p": 0.03906}, {"token": " named", "p": 0.03788}, {"token": " with", "p": 0.02892}], "children": {}}, " young": {"top": [{"token": " girl", "p": 0.27477}, {"token": " woman", "p": 0.235}, {"token": " princess", "p": 0.23431}, {"token": " lady", "p": 0.08895}, {"token": " maiden", "p": 0.05698}, {"token": " fairy", "p": 0.0084}, {"token": " Princess", "p": 0.00801}, {"token": " mer", "p": 0.00604}, {"token": " queen", "p": 0.00582}, {"token": " prince", "p": 0.00278}], "children": {}}}}, " young": {"top": [{"token": " girl", "p": 0.30358}, {"token": " man", "p": 0.117}, {"token": " boy", "p": 0.09679}, {"token": " woman", "p": 0.07827}, {"token": " prince", "p": 0.06589}, {"token": " princess", "p": 0.04424}, {"token": " lady", "p": 0.01921}, {"token": ",", "p": 0.01208}, {"token": " and", "p": 0.01061}, {"token": " king", "p": 0.00951}], "children": {" girl": {"top": [{"token": " named", "p": 0.6263}, {"token": " who", "p": 0.16348}, {"token": " called", "p": 0.04668}, {"token": ".", "p": 0.02964}, {"token": ",", "p": 0.0287}, {"token": " with", "p": 0.01422}, {"token": " whose", "p": 0.01333}, {"token": " by", "p": 0.01039}, {"token": " living", "p": 0.00874}, {"token": "\n\n", "p": 0.00663}], "children": {}}, " man": {"top": [{"token": " named", "p": 0.53452}, {"token": " who", "p": 0.21474}, {"token": " called", "p": 0.04698}, {"token": ",", "p": 0.0339}, {"token": ".", "p": 0.02842}, {"token": " by", "p": 0.02226}, {"token": " whose", "p": 0.01277}, {"token": " in", "p": 0.0127}, {"token": " with", "p": 0.01228}, {"token": " living", "p": 0.01}], "children": {}}, " boy": {"top": [{"token": " named", "p": 0.63525}, {"token": " who", "p": 0.15373}, {"token": " called", "p": 0.03827}, {"token": ".", "p": 0.02949}, {"token": ",", "p": 0.02828}, {"token": " by", "p": 0.01392}, {"token": " whose", "p": 0.01315}, {"token": " living", "p": 0.01078}, {"token": " in", "p": 0.01007}, {"token": " with", "p": 0.00763}], "children": {}}, " woman": {"top": [{"token": " named", "p": 0.60557}, {"token": " who", "p": 0.21394}, {"token": " called", "p": 0.03424}, {"token": ",", "p": 0.02574}, {"token": ".", "p": 0.02077}, {"token": " whose", "p": 0.01403}, {"token": " with", "p": 0.01302}, {"token": " by", "p": 0.01192}, {"token": " living", "p": 0.00878}, {"token": " in", "p": 0.00835}], "children": {}}}}, " girl": {"top": [{"token": " named", "p": 0.5485}, {"token": " who", "p": 0.21057}, {"token": " called", "p": 0.07104}, {"token": ".", "p": 0.04158}, {"token": ",", "p": 0.01843}, {"token": " with", "p": 0.01347}, {"token": "\n\n", "p": 0.01046}, {"token": " whose", "p": 0.00932}, {"token": " that", "p": 0.00832}, {"token": " name", "p": 0.00717}], "children": {" named": {"top": [{"token": " Alice", "p": 0.05512}, {"token": " Lily", "p": 0.03281}, {"token": " Gold", "p": 0.02599}, {"token": " Sarah", "p": 0.02089}, {"token": " Cinder", "p": 0.01843}, {"token": " L", "p": 0.01675}, {"token": " Rose", "p": 0.01444}, {"token": " Mary", "p": 0.01428}, {"token": " Emily", "p": 0.01382}, {"token": " K", "p": 0.00886}], "children": {}}, " who": {"top": [{"token": " lived", "p": 0.1978}, {"token": " loved", "p": 0.17913}, {"token": " was", "p": 0.16381}, {"token": " had", "p": 0.08945}, {"token": " wanted", "p": 0.04737}, {"token": " dreamed", "p": 0.03154}, {"token": " didn", "p": 0.01143}, {"token": " grew", "p": 0.01093}, {"token": " went", "p": 0.01046}, {"token": " could", "p": 0.01036}], "children": {}}, " called": {"top": [{"token": " Alice", "p": 0.05448}, {"token": " Lily", "p": 0.04052}, {"token": " Sarah", "p": 0.02143}, {"token": " Gold", "p": 0.02127}, {"token": " Mary", "p": 0.02043}, {"token": " Lucy", "p": 0.02042}, {"token": " Emily", "p": 0.01782}, {"token": " L", "p": 0.01775}, {"token": " Sophie", "p": 0.01525}, {"token": " Cinder", "p": 0.01496}], "children": {}}, ".": {"top": [{"token": " She", "p": 0.64008}, {"token": " Her", "p": 0.2254}, {"token": " This", "p": 0.04178}, {"token": "\n\n", "p": 0.04149}, {"token": " The", "p": 0.02679}, {"token": " \n\n", "p": 0.00323}, {"token": " Let", "p": 0.00241}, {"token": " And", "p": 0.00217}, {"token": "\n", "p": 0.00191}, {"token": " A", "p": 0.00187}], "children": {}}}}}}}, "stems": {"capital": {"stem": "The capital of France is", "top": [{"token": " Paris", "p": 0.81062}, {"token": "\n\n", "p": 0.04901}, {"token": "\n", "p": 0.01339}, {"token": " known", "p": 0.00898}, {"token": ":\n\n", "p": 0.00805}, {"token": " the", "p": 0.00688}, {"token": " a", "p": 0.00514}, {"token": " called", "p": 0.00455}, {"token": ":", "p": 0.00402}, {"token": "...\n\n", "p": 0.00377}]}, "roses": {"stem": "Roses are red, violets are", "top": [{"token": " blue", "p": 0.99882}, {"token": " violet", "p": 0.00026}, {"token": " purple", "p": 0.00022}, {"token": " b", "p": 0.0001}, {"token": " ", "p": 0.0001}, {"token": " bl", "p": 7e-05}, {"token": " fine", "p": 7e-05}, {"token": " not", "p": 3e-05}, {"token": "\n", "p": 2e-05}, {"token": " green", "p": 2e-05}]}, "weather": {"stem": "Looking at the sky, tomorrow's weather will probably be", "top": [{"token": " cloudy", "p": 0.19161}, {"token": " sunny", "p": 0.10652}, {"token": " clear", "p": 0.07843}, {"token": " a", "p": 0.04501}, {"token": " fine", "p": 0.03573}, {"token": " rainy", "p": 0.03392}, {"token": " mostly", "p": 0.02921}, {"token": " partly", "p": 0.02787}, {"token": " the", "p": 0.02278}, {"token": " good", "p": 0.0191}]}, "door": {"stem": "She opened the heavy wooden door and saw a", "top": [{"token": " small", "p": 0.16042}, {"token": " dim", "p": 0.15759}, {"token": " large", "p": 0.09987}, {"token": " long", "p": 0.08221}, {"token": " room", "p": 0.06885}, {"token": " dark", "p": 0.06161}, {"token": " tall", "p": 0.05523}, {"token": " grand", "p": 0.03214}, {"token": " beautiful", "p": 0.02431}, {"token": " man", "p": 0.02428}]}}, "stochasticity": {"prompt": "Write a six-word story about a lonely robot. Just the six words, nothing else.", "default_runs": ["Alone, the robot dreamed of touch.", "Rusting alone, it dreamed of touch.", "Rusting robot waved; nobody waved back.", "Rusting alone, it learned to dream.", "Rusting alone, it dreamed of voices.", "Rusting alone, it dreamed of voices."], "gpt4o_t0": ["Wires crossed, heart seeks human connection.", "Wires crossed, heart seeks human connection.", "Wires crossed, heart yearns for connection."], "gpt4o_t1": ["Rusty gears, endless stars, no home.", "Corroded circuits echo: \"No one responds.\"", "Rusting heart, silent circuits, longing gaze.", "Wires frayed, circuits dim: heart untouched.", "Metal heart, searching stars, finds silence.", "AI seeks friend; finds solitude instead."]}, "fabrication": {"lede_html": "Asked for the DOI of a <em>real</em> paper — the presenter's own — it returns the right authors, title, journal and year, then a <strong>plausible, confidently-formatted DOI that is wrong</strong>. Ask again and again and you get a different wrong DOI each time.", "shown_output": "Wallrich, L., West, K., & Rutland, A. (2020). Painting all foreigners with one brush? *Journal of Social and Political Psychology, 8*(1). https://doi.org/10.5964/jspp.v8i1.1303", "verdict_good": false, "verdict_html": "<b>Fabricated.</b> The real DOI is <span style='font-family:var(--mono)'>10.5964/jspp.v8i1.1283</span> (resolves on Crossref to this paper). Across repeated runs the model produced <span style='font-family:var(--mono)'>…1303, …1221, …1241, …1247</span> — all different, all formatted perfectly, <b>none of them real</b>. It isn't looking anything up; it's generating a string that looks like a DOI. Same mechanism, no notion of truth."}, "tokenisation": {"tokens": {"strawberry": ["st", "raw", "berry"], "Mississippi": ["Miss", "issippi"], "counterrevolutionary": ["counter", "re", "volution", "ary"]}, "word": "strawberry", "letter": "r", "passes": [{"q": "How many r's in \"strawberry\"?", "ans": "3", "note": "the canonical \"LLMs can't count\" demo"}, {"q": "Which is larger, 9.11 or 9.9?", "ans": "9.9", "note": "the decimal-comparison trap"}, {"q": "73,914 × 49,271 = ?", "ans": "3,641,816,694", "note": "exact, no calculator"}]}};
+</script>
+<script>
+/* ============ SLIDE DEFINITIONS ============ */
+const D = window.DATA;
+const esc = s => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const showTok = t => t.replace(/\n/g,"\\n").replace(/^ /,"␣").replace(/ /g,"·"); // visible whitespace
+const cleanTok = t => t.replace(/\n/g,"↵");
+function pad(n){return String(n).padStart(2,"0");}
+
+const slides = [];
+function slide(html){slides.push(html);}
+
+/* 1. TITLE */
+slide(`
+<div class="wrap">
+  <div class="marker">Before we talk about agents</div>
+  <h1>What is an LLM,<br>really?</h1>
+  <p class="lead wide">A seven-minute grounding. Every demo here is real model output — the prompt, model and date shown each time.</p>
+  <p class="tiny">Use <span class="kbd">→</span> / <span class="kbd">←</span> or the arrows. Click the demos.</p>
+  <div class="madeby"><span class="spark">✶</span> Generated by Claude Code</div>
+</div>`);
+
+/* 2. FRAME */
+slide(`
+<div class="wrap">
+  <div class="marker">The one idea everything hangs on</div>
+  <h2>An LLM is a <span class="hl">probabilistic model of language</span>.</h2>
+  <p class="lead wide">Not a database. Not an oracle. Not a reasoning engine in the classical sense.</p>
+</div>`);
+
+/* 3. NEXT-TOKEN TREE (hero) */
+slide(`
+<div class="wrap">
+  <div class="marker">The mechanism — everything else follows from this</div>
+  <h2>It predicts the next chunk of text. That's the whole engine.</h2>
+  <p class="wide quiet small">The model produces a probability for <em>every</em> possible next token; generation
+  just loops — pick one, append, predict again. Click a bar to choose. "Fancy autocomplete" is the right anchor,
+  and incomplete: doing this well at scale is what yields translation, code and step-by-step reasoning.</p>
+  <div class="nt" id="ntTree"></div>
+  <div class="prov"><span class="dot"></span> Real next-token probabilities · model <b>gpt-3.5-turbo-instruct</b>
+  (a completion model that exposes its token probabilities — the clearest view of the mechanism) · ${D.meta?D.meta.date:""}</div>
+</div>`);
+
+/* 4. CERTAINTY VARIES */
+slide(`
+<div class="wrap">
+  <div class="marker">The same mechanism, two moods</div>
+  <h2>Sometimes it's almost certain. Sometimes it's guessing.</h2>
+  <p class="wide quiet small">The shape of the distribution shows how strongly the model prefers some continuations over others:
+  a narrow spike means one obvious next token; a flat spread means many are plausible, and it samples among them.</p>
+  <div class="stemgrid" id="stemGrid"></div>
+  <div class="prov"><span class="dot"></span> Real top tokens · <b>gpt-3.5-turbo-instruct</b> · temperature 0 · ${D.meta?D.meta.date:""}</div>
+</div>`);
+
+/* 5. STOCHASTIC */
+slide(`
+<div class="wrap">
+  <div class="marker">Implication for reproducibility</div>
+  <h2>Same prompt, different answer.</h2>
+  <p class="wide quiet small">Because it samples from that distribution, the model is <strong>stochastic by default</strong>: the same
+  prompt can give different answers, so "I tried it and it worked" is weak evidence — so is "I tried it and it failed."</p>
+  <div class="cols">
+    <div>
+      <div class="label" id="stoLabel">The same prompt — six real runs</div>
+      <div class="serif small quiet" id="stoPrompt"></div>
+      <div class="runs" id="stoRuns"></div>
+      <div class="btnrow"><button class="btn" id="stoTog">Set temperature to 0 →</button></div>
+      <p class="small quiet" id="stoNote" style="margin-top:.5em"></p>
+    </div>
+  </div>
+  <div class="prov"><span class="dot"></span> <span id="stoProv"></span></div>
+</div>`);
+
+/* 6. TWO STAGES */
+slide(`
+<div class="wrap">
+  <div class="marker">Why it behaves like an assistant</div>
+  <h2>Two training stages make the model you actually meet.</h2>
+  <div class="stages">
+    <div class="stage"><span class="num">1</span><h3>Pre-training</h3>
+      <p class="small quiet">Predict the next token across a vast text corpus. Produces a raw <em>completer</em> —
+      knowledgeable, but with no inclination to be helpful, honest, or to stop.</p></div>
+    <div class="arrowbetween">→</div>
+    <div class="stage"><span class="num">2</span><h3>Post-training</h3>
+      <p class="small quiet">Instruction tuning and reinforcement from human feedback (and related preference-based
+      methods) shape a helpful <em>assistant</em> with a recognisable persona, house style, and habits.</p></div>
+  </div>
+  <p class="wide quiet small" style="margin-top:.8em">This explains the otherwise-mysterious behaviour:
+  why it's so eager to please, why it hedges, why it has a "voice" — and the failure mode on the next slide.</p>
+</div>`);
+
+/* 7. CONFABULATION */
+slide(`
+<div class="wrap">
+  <div class="marker">The failure researchers get burned by</div>
+  <h2>It generates <span class="hl">plausible</span> text. Plausible and true are not the same thing.</h2>
+  <p class="wide quiet" id="confLede"></p>
+  <div class="cite" id="confCite"></div>
+  <div class="verifyrow"><button class="btn" id="confVerify">Check it against Crossref ▶</button></div>
+  <div class="verdict bad" id="confVerdict"></div>
+  <p class="small quiet" style="margin-top:.55em">This isn't the model "not trying hard enough" — it's structural.
+  The fix is <strong>grounding</strong>: retrieval, tools, source-checking. Exactly what an agent adds.</p>
+  <div class="prov"><span class="dot"></span> <span id="confProv"></span></div>
+</div>`);
+
+/* 8. JAGGED + TOKENS */
+slide(`
+<div class="wrap">
+  <div class="marker">The frontier is jagged — and it moves</div>
+  <h2>The famous failures? Mostly patched.</h2>
+  <div class="cols">
+    <div>
+      <p class="quiet small">The demos that made the rounds — counting letters, comparing decimals, big multiplication.
+      Here's the current frontier model on all three:</p>
+      <div id="jagPasses"></div>
+      <button class="btn ghost small" id="countReveal" style="margin-top:.6em">Why was counting letters ever hard? ▶</button>
+    </div>
+    <div>
+      <div class="reveal-step" id="tokExplain">
+        <p class="quiet small">It doesn't see individual letters — text is split into <strong>tokens</strong> first
+        (chunks, not characters):</p>
+        <div class="tokrow" id="tokRow"></div>
+        <p class="quiet small">Counting inside a chunk it processes whole was genuinely hard — until it was trained on it.
+        The lesson isn't "it's reliable now." It's that capability is <strong>jagged and moving</strong>: last year's
+        failure is this year's pass, and new failures sit wherever you haven't tested. <strong>Test it on your task.</strong></p>
+      </div>
+    </div>
+  </div>
+  <p class="small quiet" style="margin-top:.5em">One failure that's still easy to reproduce here: precise facts it should look up — like that DOI.</p>
+  <div class="prov"><span class="dot"></span> <span id="countProv"></span> · token split via tiktoken (o200k)</div>
+</div>`);
+
+/* 9. CONTEXT + FROZEN */
+slide(`
+<div class="wrap">
+  <div class="marker">What it knows, and when</div>
+  <h2>The context window is everything it can see right now.</h2>
+  <div class="cols">
+    <div class="card"><div class="label">No memory by default</div>
+      <p class="small quiet">Each session is bounded by what fits in the context window. Close the tab and it's gone,
+      unless a memory feature re-injects it. Managing this is most of what agent design <em>is</em>.</p></div>
+    <div class="card"><div class="label">The weights are frozen</div>
+      <p class="small quiet">Its <strong>weights don't change</strong> as you chat. Your words change the model's
+      <em>input</em>, not the model — within a session, the chat can't "absorb" your data.</p></div>
+  </div>
+</div>`);
+
+/* 10. NOT ONE THING */
+slide(`
+<div class="wrap">
+  <div class="marker">"An LLM" is not one thing</div>
+  <h2>Capability varies hugely between models — and the frontier moves monthly.</h2>
+  <div class="cols">
+    <div><ul class="small quiet">
+      <li><strong>Frontier vs free/old</strong> — the gap is large. Most priors are formed on a weak model tried once.</li>
+      <li><strong>Reasoning models</strong> — a new category, trained to spend more compute "thinking" before they answer. Slower, costlier, far better on hard multi-step problems.</li>
+      <li>The frontier <strong>moves monthly</strong>. "I tried it in 2023" tells you almost nothing about today.</li>
+    </ul></div>
+    <div class="card accent">
+      <div class="label">Live proof, while building this deck</div>
+      <p class="small">Building this, I (Claude) confidently called <span class="serif">gpt-5.1</span> "the latest model."
+      Lukas pushed back. The API's own list showed <strong>gpt-5.5</strong>, shipped April 2026 — several releases newer.
+      My training cut off in January; I was out of date and sure of myself. <em>Exactly</em> the failure this slide is about.</p>
+    </div>
+  </div>
+</div>`);
+
+/* 11. BRIDGE */
+slide(`
+<div class="wrap">
+  <div class="marker">So — what's an agent?</div>
+  <h2>An agent is this model, placed in a loop with tools.</h2>
+  <div class="loop">
+    <div class="lnode core"><div class="t">LLM</div><div class="s">the reasoning core</div></div>
+    <span class="larrow">→</span>
+    <div class="lnode"><div class="t">act</div><div class="s">call a tool</div></div>
+    <span class="larrow">→</span>
+    <div class="lnode"><div class="t">observe</div><div class="s">read the result</div></div>
+    <span class="larrow">→</span>
+    <div class="lnode"><div class="t">iterate</div><div class="s">+ memory / state</div></div>
+  </div>
+  <p class="wide" style="margin-top:.6em">Every limitation we just saw has an answer in that loop:</p>
+  <ul class="small">
+    <li><strong>Confabulation</strong> → ground it in retrieved sources and let it check them.</li>
+    <li><strong>No memory</strong> → give it external state and files.</li>
+    <li><strong>Frozen, out-of-date knowledge</strong> → let it fetch what's current.</li>
+  </ul>
+  <p class="lead" style="margin-top:.5em">That's where we're going: the rest of today is this model, in that loop, on real research tasks.</p>
+</div>`);
+
+/* ============ RENDER + NAV ============ */
+const deck=document.getElementById("deck");
+slides.forEach((h,i)=>{const s=document.createElement("section");s.className="slide";s.innerHTML=h;deck.appendChild(s);});
+const slideEls=[...document.querySelectorAll(".slide")];
+const dots=document.getElementById("dots");
+slideEls.forEach((_,i)=>{const b=document.createElement("button");b.onclick=()=>go(i);dots.appendChild(b);});
+document.getElementById("tot").textContent=slideEls.length;
+let cur=0, built={};
+function go(i){
+  i=Math.max(0,Math.min(slideEls.length-1,i));
+  slideEls.forEach((s,j)=>{s.classList.toggle("active",j===i);s.classList.toggle("prev",j<i);});
+  [...dots.children].forEach((d,j)=>d.classList.toggle("on",j===i));
+  document.getElementById("cur").textContent=i+1;
+  document.querySelector(".brandmark").style.display=(i===0?"block":"none");
+  document.getElementById("progress").style.width=((i+1)/slideEls.length*100)+"%";
+  cur=i; if(builders[i]&&!built[i]){builders[i]();built[i]=true;}
+}
+document.getElementById("next").onclick=()=>go(cur+1);
+document.getElementById("prev").onclick=()=>go(cur-1);
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight"||e.key==="PageDown"){go(cur+1);}
+  else if(e.key==="ArrowLeft"||e.key==="PageUp"){go(cur-1);}
+  else if(e.key==="Home"){go(0);} else if(e.key==="End"){go(slideEls.length-1);}
+});
+
+/* ============ WIDGET BUILDERS ============ */
+const builders={};
+const isWS = t => !/[\p{L}\p{N}]/u.test(t); // drop tokens with no letter/digit (whitespace, punctuation, newlines)
+
+/* --- 3. next-token tree --- */
+builders[2]=function(){
+  const tree=D.tree; const box=document.getElementById("ntTree");
+  let node=tree.root, prefix=tree.stem, chosen=[];
+  function renderBars(top){
+    const vis=top.filter(t=>!isWS(t.token)).slice(0,6);
+    const max=Math.max(...vis.map(t=>t.p));
+    return `<div class="bars">`+vis.map(t=>{
+      const pct=(t.p*100);
+      return `<div class="bar" data-tok="${esc(t.token)}">
+        <span class="tok">${esc(showTok(t.token))}</span>
+        <span class="track"><span class="fill" style="width:${Math.max(2,t.p/max*100)}%"></span></span>
+        <span class="pct">${pct<1?pct.toFixed(2):pct.toFixed(1)}%</span></div>`;}).join("")+`</div>`;
+  }
+  function spread(top){const vis=top.filter(t=>!isWS(t.token));return vis.length&&vis[0].p>0.6;}
+  function draw(){
+    const tag=spread(node.top)?`<span class="spreadtag sure">near-certain</span>`:`<span class="spreadtag unsure">genuinely uncertain</span>`;
+    box.innerHTML=`<div class="sent"><span class="fixed">${esc(tree.stem)}</span>`+
+      chosen.map(c=>`<span class="chosen">${esc(c)}</span>`).join("")+
+      `<span class="cursor"></span> ${tag}</div>`+renderBars(node.top)+
+      `<div class="hint">↑ the model's actual probabilities for the next token (top few shown). Pick one to continue.
+       <button class="btn ghost" id="ntSample" style="margin-left:.4em;padding:.3em .7em;font-size:.8em">🎲 sample</button>
+       <button class="btn ghost" id="ntReset" style="padding:.3em .7em;font-size:.8em">↺ reset</button></div>`;
+    box.querySelectorAll(".bar").forEach(b=>b.onclick=()=>pick(b.dataset.tok));
+    document.getElementById("ntReset").onclick=()=>{node=tree.root;prefix=tree.stem;chosen=[];draw();};
+    document.getElementById("ntSample").onclick=()=>{
+      const vis=node.top.filter(t=>!isWS(t.token));const r=Math.random()*vis.reduce((a,b)=>a+b.p,0);
+      let acc=0,sel=vis[0];for(const t of vis){acc+=t.p;if(r<=acc){sel=t;break;}}pick(sel.token);};
+  }
+  function pick(tok){
+    chosen.push(tok.replace(/\n/g,"↵"));prefix+=tok;
+    const next=node.children&&node.children[tok];
+    if(next){node=next;draw();}
+    else{ // leaf reached
+      box.querySelector(".sent").innerHTML=`<span class="fixed">${esc(tree.stem)}</span>`+
+        chosen.map(c=>`<span class="chosen">${esc(c)}</span>`).join("")+` …`;
+      box.querySelector(".bars")?.remove();
+      const h=box.querySelector(".hint");if(h)h.innerHTML=`…and the loop continues, one token at a time, to the end of the text.
+        <button class="btn ghost" id="ntReset2" style="padding:.3em .7em;font-size:.8em">↺ start over</button>`;
+      document.getElementById("ntReset2").onclick=()=>{node=tree.root;prefix=tree.stem;chosen=[];draw();};
+    }
+  }
+  draw();
+};
+
+/* --- 4. stems small multiples --- */
+builders[3]=function(){
+  const grid=document.getElementById("stemGrid");const order=["roses","capital","weather","door"];
+  grid.innerHTML=order.filter(k=>D.stems[k]).map(k=>{
+    const s=D.stems[k];const vis=s.top.filter(t=>!isWS(t.token)).slice(0,4);const max=Math.max(...vis.map(t=>t.p));
+    const sure=vis[0].p>0.6;
+    return `<div class="stembox"><div class="stemtext">${esc(s.stem)} <span class="nx">▮</span>
+      <span class="spreadtag ${sure?'sure':'unsure'}">${sure?'near-certain':'uncertain'}</span></div>
+      <div class="bars">`+vis.map(t=>`<div class="bar" style="cursor:default">
+        <span class="tok">${esc(showTok(t.token))}</span>
+        <span class="track"><span class="fill" style="width:${Math.max(2,t.p/max*100)}%"></span></span>
+        <span class="pct">${(t.p*100)<1?(t.p*100).toFixed(2):(t.p*100).toFixed(1)}%</span></div>`).join("")+
+      `</div></div>`;}).join("");
+};
+
+/* --- 5. stochasticity --- */
+builders[4]=function(){
+  const sto=D.stochasticity; document.getElementById("stoPrompt").textContent="“"+sto.prompt+"”";
+  const runsEl=document.getElementById("stoRuns"), prov=document.getElementById("stoProv");
+  const label=document.getElementById("stoLabel"), note=document.getElementById("stoNote");
+  const btn=document.getElementById("stoTog");
+  const fmt=s=>(s||"").replace(/\n/g," ").trim();
+  function play(list,markDup){
+    runsEl.innerHTML="";
+    list.forEach((r,i)=>{const d=document.createElement("div");
+      const dup=markDup&&i>0&&fmt(r)===fmt(list[0]);
+      const drift=markDup&&i>0&&fmt(r)!==fmt(list[0]);
+      d.className="runline"+(dup?" same":"");
+      d.innerHTML=`<span class="n">${i+1}</span><span>${esc(fmt(r))}</span>`+
+        (drift?`<span style="font-family:var(--mono);font-size:.6em;color:var(--accent);margin-left:auto">≠ drifted</span>`:"");
+      runsEl.appendChild(d);
+      setTimeout(()=>d.classList.add("show"),120+i*260);});
+  }
+  const def=(sto.default_runs&&sto.default_runs.length)?sto.default_runs:sto.gpt4o_t1;
+  let mode="def";
+  function render(){
+    if(mode==="def"){
+      play(def,false);
+      label.textContent="The same prompt — six real runs";
+      note.innerHTML="<strong>Temperature</strong> is the dial for randomness: higher = more varied, 0 = take the most likely token each time. See what 0 does →";
+      btn.innerHTML="Set temperature to 0 →";
+      prov.innerHTML=`Real runs · model <b>${esc(D.meta.bx_model)}</b> · default sampling · recorded ${D.meta.date}`;
+    }else{
+      play(sto.gpt4o_t0.length?sto.gpt4o_t0:def.slice(0,3),true);
+      label.textContent="The same prompt at temperature 0";
+      note.innerHTML="Far more repeatable (shown on gpt-4o, which exposes the setting) — but look at run 3: even “deterministic” settings aren’t fully deterministic.";
+      btn.innerHTML="← Back to default sampling";
+      prov.innerHTML=`Real runs · <b>gpt-4o</b> · temperature 0 · recorded ${D.meta.date}`;
+    }
+  }
+  btn.onclick=()=>{mode=(mode==="def")?"t0":"def";render();};
+  render();
+};
+
+/* --- 7. confabulation --- */
+builders[6]=function(){
+  const f=D.fabrication; document.getElementById("confLede").innerHTML=f.lede_html||"";
+  document.getElementById("confCite").textContent=f.shown_output;
+  const v=document.getElementById("confVerdict");
+  document.getElementById("confVerify").onclick=function(){this.disabled=true;
+    v.innerHTML=f.verdict_html;v.classList.add("show");v.classList.toggle("good",!!f.verdict_good);v.classList.toggle("bad",!f.verdict_good);};
+  document.getElementById("confProv").innerHTML=`Real output · model <b>${esc(D.meta.bx_model)}</b> · ${D.meta.date} · DOI checked against Crossref`;
+};
+
+/* --- 8. jagged: passes + tokens --- */
+builders[7]=function(){
+  const t=D.tokenisation; const box=document.getElementById("jagPasses");
+  box.innerHTML=`<div style="display:flex;flex-direction:column;gap:.5em;margin-top:.4em">`+
+    t.passes.map(p=>`<div class="card" style="padding:.6em .8em;display:flex;align-items:center;gap:.8em">
+      <span style="flex:1"><span class="serif" style="font-size:1.02em">${esc(p.q)}</span>
+        <div class="tiny quiet">${esc(p.note||"")}</div></span>
+      <span class="bignum right" style="font-size:1.4em">${esc(p.ans)}</span>
+      <span style="color:var(--ok);font-size:1.2em">✓</span></div>`).join("")+`</div>`;
+  const row=document.getElementById("tokRow");const word=t.word;
+  row.innerHTML=t.tokens[word].map(tk=>`<span class="tok-chip ${tk.toLowerCase().includes(t.letter)?'r':''}">${esc(tk.replace(/ /g,'␣'))}</span>`).join("");
+  document.getElementById("countReveal").onclick=function(){document.getElementById("tokExplain").classList.add("show");this.style.display="none";};
+  document.getElementById("countProv").innerHTML=`Real outputs · model <b>${esc(D.meta.bx_model)}</b> · ${D.meta.date}`;
+};
+
+go(0);
+</script>
+</body>
+</html>

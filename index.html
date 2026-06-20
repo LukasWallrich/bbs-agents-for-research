@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Using AI Agents for Research - Workshop Resources</title>
+  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div class="container hero-grid">
+      <div>
+        <div class="module-tag">Birkbeck Business School · Research seminar</div>
+        <h1>Using AI agents for research, without handing them the steering wheel</h1>
+        <p class="index-intro">A compact resource page for trying AI agents in research: where to start, what to check, and which sources are worth keeping close.</p>
+        <div class="deck-links">
+          <a class="deck-link" href="slides/" target="_blank" rel="noopener">
+            <span class="deck-link-label">Workshop slides <span aria-hidden="true">&rarr;</span></span>
+            <span class="deck-link-sub">The seminar deck</span>
+          </a>
+          <a class="deck-link" href="opener/" target="_blank" rel="noopener">
+            <span class="deck-link-label">What is an LLM, really? <span aria-hidden="true">&rarr;</span></span>
+            <span class="deck-link-sub">Interactive intro &middot; AI-generated</span>
+          </a>
+        </div>
+      </div>
+      <div class="workflow-visual" aria-label="Workflow: context, grounding, plan, verify">
+        <div class="workflow-step">
+          <span>1</span>
+          <strong>Context</strong>
+          <p>Show the project, not just the question.</p>
+        </div>
+        <div class="workflow-step">
+          <span>2</span>
+          <strong>Grounding</strong>
+          <p>Point to the files and sources it may use.</p>
+        </div>
+        <div class="workflow-step">
+          <span>3</span>
+          <strong>Plan</strong>
+          <p>Agree the route before it acts.</p>
+        </div>
+        <div class="workflow-step">
+          <span>4</span>
+          <strong>Verify</strong>
+          <p>Check the trace, the claims, and the output.</p>
+        </div>
+        <p class="workflow-note">The habits below flesh out each step.</p>
+      </div>
+    </div>
+  </header>
+
+  <nav aria-label="Page sections">
+    <div class="container">
+      <ol>
+        <li><a href="#try">Getting Started</a></li>
+        <li><a href="#habits">Habits</a></li>
+        <li><a href="#limits">Limits</a></li>
+        <li><a href="#links">Further Links</a></li>
+      </ol>
+    </div>
+  </nav>
+
+  <main>
+    <section id="try">
+      <h2>Getting Started</h2>
+      <div class="task-grid">
+        <article class="task-card">
+          <h3>Get oriented in a project</h3>
+          <p>Point an agent at a folder you already understand and ask what is there, what looks important, and what may be missing.</p>
+          <p><strong>Check:</strong> correct its map of the project before asking it to change anything.</p>
+          <p class="tool-hint">Try it in: Codex, Claude Code, or another coding agent working in your project folder.</p>
+        </article>
+
+        <article class="task-card">
+          <h3>Extract objective details from papers</h3>
+          <p>Give it a small folder of papers and ask for concrete data points: measurement scales used, sample sizes, countries, variables, manipulations, exclusion rules, or model specifications.</p>
+          <p><strong>Check:</strong> require page or section pointers, then open the source for any detail you might reuse.</p>
+          <p class="tool-hint">Try it in: Codex or Claude Code with the PDFs in a clearly named folder.</p>
+        </article>
+
+        <article class="task-card">
+          <h3>Get a working code scaffold</h3>
+          <p>Ask for a first data-cleaning script, analysis template, simulation, or reproducible report structure.</p>
+          <p><strong>Check:</strong> run it, inspect the assumptions, and test it on a case where you know what should happen.</p>
+          <p class="tool-hint">Try it in: Codex or Claude Code, ideally with a small sample dataset and a clear analysis note.</p>
+        </article>
+
+        <article class="task-card">
+          <h3>Delegate repetitive browser tasks</h3>
+          <p>Some agents can operate a browser or desktop while you watch, which can help with low-risk form filling or moving information between systems.</p>
+          <p><strong>Check:</strong> review every field before submitting anything.</p>
+          <p class="tool-hint">Try it in: Codex or Claude Code after installing a browser-control plugin or equivalent browser tool.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="habits">
+      <h2>Habits</h2>
+
+      <article class="habit-card">
+        <div class="habit-number">1</div>
+        <div>
+          <h3>Give it enough context to be specific</h3>
+          <p>Agents are at their best when they can inspect the real project: your folder structure, data dictionaries, code, draft, preregistration, paper set, or notes. The same is true in ordinary chat: models respond to the full context, not only the last sentence, and more relevant context usually produces more useful output.</p>
+        </div>
+      </article>
+
+      <article class="habit-card">
+        <div class="habit-number">2</div>
+        <div>
+          <h3>Ground it in sources you can inspect</h3>
+          <p>When an agent works in a local project, grounding usually means pointing it at the files it should use: the PDFs, scripts, data dictionaries, preregistration, or notes. Ask it to cite filenames and page, section, or line references so you can inspect the path from source to output.</p>
+          <p class="evidence">Grounding helps you check the output. It does not mean the agent understood the source correctly.</p>
+        </div>
+      </article>
+
+      <article class="habit-card">
+        <div class="habit-number">3</div>
+        <div>
+          <h3>Ask for a plan before you ask for output</h3>
+          <p>A useful agent task has inputs, an output format, acceptance criteria, checkpoints, and known failure modes. Ask the agent to restate the task, propose a plan, and ask you any clarifying questions before it starts changing files or producing the final output.</p>
+          <p class="evidence">The point is not to write a perfect prompt. It is to catch mismatched assumptions early and make the output easier to inspect.</p>
+        </div>
+      </article>
+
+      <article class="habit-card">
+        <div class="habit-number">4</div>
+        <div>
+          <h3>Check what it hands back</h3>
+          <p>Verification is not a moral afterthought. It is the whole reason the workflow works. Lean on both automated and manual checks, and where you can, a second pair of eyes that did not write the thing.</p>
+          <p><strong>Automated.</strong> Run the code and write tests on cases where you know the answer: simulate data with an effect you put in and confirm the analysis recovers it, or check totals, ranges, and counts against the source file. Deterministic code is a cheap, repeatable second opinion.</p>
+          <p><strong>Manual.</strong> Open the source for any claim or data point you might reuse. Do the numbers match the paper? Did it cite the right source for the right detail?</p>
+          <p><strong>A fresh agent.</strong> Hand the output to a second agent that has no memory of how it was produced and ask it to find what is wrong. An agent reviewing its own work tends to agree with itself; a fresh run catches fabricated citations and unsupported claims the first one waved through.</p>
+          <p class="evidence">Language models can sound confident when they are wrong, and publisher guidance puts responsibility on human authors, not AI tools.</p>
+          <a class="inline-link" href="https://openai.com/index/why-language-models-hallucinate/">OpenAI on hallucination</a>
+          <a class="inline-link" href="https://www.icmje.org/recommendations/browse/artificial-intelligence/">ICMJE guidance</a>
+          <a class="inline-link" href="https://publicationethics.org/guidance/cope-position/authorship-and-ai-tools">COPE guidance</a>
+        </div>
+      </article>
+    </section>
+
+    <section id="limits">
+      <h2>Limits</h2>
+      <div class="limit-list">
+        <article>
+          <h3>Hallucination is not solved</h3>
+          <p>Even strong models can produce false claims with fluent confidence. Treat citations, dates, statistics, and claims about specific papers as things to verify, not as settled facts.</p>
+        </article>
+        <article>
+          <h3>Grounding improves traceability, not judgement</h3>
+          <p>A source-linked answer can still misread the source. An extraction table with page references is easier to check, but it is not automatically correct.</p>
+        </article>
+        <article>
+          <h3>AI can narrow thinking</h3>
+          <p><a href="https://doi.org/10.1038/s41562-025-02173-x">Evidence on brainstorming</a> suggests AI can raise the average creativity of individual ideas while reducing the diversity of ideas across a group. Use it as one voice in the room, not as the room.</p>
+        </article>
+        <article>
+          <h3>Policies and data boundaries matter</h3>
+          <p>Do not put confidential, identifiable, or restricted material into tools unless the data policy and project permissions allow it. Be especially careful with peer-review manuscripts: ICMJE advises reviewers and editors not to upload submitted manuscripts where confidentiality cannot be assured. For publication, disclose AI use according to the journal, funder, and institutional rules that apply.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="links">
+      <h2>Further Links</h2>
+      <div class="link-groups">
+        <article>
+          <h3>Understand the risk</h3>
+          <ul>
+            <li><a href="https://openai.com/index/why-language-models-hallucinate/">Why language models hallucinate</a> - OpenAI's explanation of why models can confidently guess.</li>
+            <li><a href="https://thebullshitmachines.com/">Modern-day oracles or bullshit machines?</a> - Carl Bergstrom and Jevin West's course on critical AI use.</li>
+            <li><a href="https://doi.org/10.1038/s41562-025-02173-x">ChatGPT decreases idea diversity in brainstorming</a> - useful evidence for protecting independent thinking.</li>
+          </ul>
+        </article>
+
+        <article>
+          <h3>Try agent workflows</h3>
+          <ul>
+            <li><a href="https://claudeblattman.com/setup/">Getting started with Claude Code</a> - practical setup guide aimed at researchers.</li>
+            <li><a href="https://www.oneusefulthing.org/p/management-as-ai-superpower">Management as AI superpower</a> - Ethan Mollick on briefing, feedback, and evaluation.</li>
+            <li><a href="https://addyosmani.com/blog/good-spec/">How to write a good spec for AI agents</a> - software-focused, but the specification pattern transfers well.</li>
+          </ul>
+        </article>
+
+        <article>
+          <h3>Publish responsibly</h3>
+          <ul>
+            <li><a href="https://www.icmje.org/recommendations/browse/artificial-intelligence/">ICMJE guidance on AI in publishing</a> - disclosure and human responsibility.</li>
+            <li><a href="https://publicationethics.org/guidance/cope-position/authorship-and-ai-tools">COPE position on authorship and AI tools</a> - why AI tools cannot be authors.</li>
+            <li><a href="https://guides.lib.purdue.edu/c.php?g=1371380&p=10135076">Purdue publisher-policy tracker</a> - a useful place to check current journal guidance.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- Verification (checked 20 Jun 2026): brainstorming claim sourced to Meincke, Nave & Terwiesch 2025, DOI 10.1038/s41562-025-02173-x (resolves on Crossref; Nature Human Behaviour). The paper measures "creativity" (originality + appropriateness), not "quality" — wording matched to the source; the creativity gain is from the Lee & Chung 2024 experiments the commentary responds to. All Further Links reachable (openai.com and publicationethics.org 403 to bots but are valid canonical URLs). -->
+  </main>
+
+  <footer>
+    <p>Using AI agents for research · Birkbeck Business School</p>
+    <p>Prepared for workshop attendees. Last checked: 19 June 2026.</p>
+  </footer>
+
+  <script src="scripts.js"></script>
+</body>
+</html>
